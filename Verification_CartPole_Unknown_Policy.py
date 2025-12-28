@@ -279,8 +279,7 @@ def verification_fcn(A, B, C, D, E, F, Ts, gamma, lip, d_max):
 # --- Cart–pole parameters -----------------------------------------------------    
     mc, mp, L, g = 2, 0.1, 1, 9.81  
     u_max = 80
-
-    
+  
     
 # --- Initial domain X^(0) -----------------------------------------------------    
     th_LBD, th_UBD  = -np.pi/4, np.pi/4
