@@ -299,7 +299,7 @@ while not flag_verified:
             print("~~~~~ h(x)  =   ", CC, "~~~~~ s(x)  =   ", -x_ce_th_tens**2 - x_ce_om_tens**2 + (r_safe)**2)
         else:
         
-            flag_verified, x_ce = Verification_CartPole_Unknown_Policy.verification_fcn(coeff_py[0], coeff_py[1], coeff_py[2], coeff_py[3], coeff_py[4], 1, Ts, 1, lip, d_max)
+            flag_verified, x_ce = Verification_CartPole_Unknown_Policy.verification_fcn(coeff_py[0], coeff_py[1], coeff_py[2], coeff_py[3], coeff_py[4], 1, Ts, gamma, lip, d_max)
             
             if not flag_verified:
                 print("counterexample ?= ", x_ce)
