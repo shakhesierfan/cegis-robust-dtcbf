@@ -131,7 +131,7 @@ def lipschitz_penalty(coeff, theta, omega, L):
 
 # System parameters
 Ts = 0.05          # Sampling time (s)
-gamma = 1          # CBF/constraint scaling factor
+gamma = 1          # gamma
 mc = 2             # Cart mass
 mp = 0.1           # Pole mass
 l = 1              # Pole length
