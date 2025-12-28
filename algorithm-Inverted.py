@@ -337,7 +337,8 @@ while not flag_verified:
     if iteration_reset >= 3:
         iteration_reset = 0 
         print("reset optimizer!!!!")
-        coeff = torch.tensor([-1,  -1,   -1, -1, 0], dtype=torch.double, requires_grad=True, device = device)
+        #coeff = torch.tensor([-1,  -1,   -1, -1, 0], dtype=torch.double, requires_grad=True, device = device)
+        coeff = (4 * torch.rand(5, dtype=torch.double, device=device) - 2).requires_grad_()
         ctrl_1 = controller()
         ctrl_1 = ctrl_1.to(device)
         optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.2, momentum=0)
