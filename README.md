@@ -32,12 +32,6 @@ a prescribed region:
 \]
 
 A quadratic R-DTCBF is synthesized using the proposed CEGIS approach and verified
-over the entire state space of interest. The example demonstrates:
-- reduced conservatism compared to fixed-region approaches,
-- robustness to disturbances,
-- compatibility with online safety-filtered control.
-
+over the entire state space of interest.
 ---
-
-## Structure (typical)
 
