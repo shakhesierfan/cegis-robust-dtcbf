@@ -213,6 +213,7 @@ while not flag_verified:
     overal_iteration += 1
     print("========================================= Overal Iteration = ", overal_iteration)
     iteration_reset += 1
+
     epoch = 0
     flag_loss = 0
     
@@ -266,8 +267,6 @@ while not flag_verified:
     print('coeff = ', coeff)
     
     if flag_loss:
-        print("BEFORE ~!!~Safe~!~!~ = ", 1e1*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-8)) )
-        print("~!!~CBF~!~!~ = ", 1e1*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max) )
         print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, gamma, lip, d_max) )
         iteration_reset = 0
 
@@ -318,12 +317,7 @@ while not flag_verified:
 
                 loss_value_temp = Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, x_ce_th_tens, x_ce_om_tens, gamma, lip, d_max)
                 
-                print("~CBF!!~!~!~!~ = ",  cbf_value_temp)
-                print("~CBF next!!~!~!~!~ = ",  cbf_next_value_temp, "d = ", cbf_next_value_temp - lip*d_max)
                 print("~~~~~~~~~loss~~~ = ",  loss_value_temp )
-                print("After ~!Safe!= ", 1e2*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-4)) )
-                print("~!!~!CBF!~!~ = ", 1e2*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max) )
-                print("~ONE!!~!~!~!~ = ", 1e2*Loss_CBF_fcn(coeff, x_ce_th_tens, x_ce_om_tens, gamma, lip, d_max) )
             else:
                 print("hoooooraaay verified +++++++++++ = ", coeff)
 
