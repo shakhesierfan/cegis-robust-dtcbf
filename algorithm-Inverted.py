@@ -128,15 +128,28 @@ def lipschitz_penalty(coeff, theta, omega, L):
 
 
 ####
-Ts, gamma, mc, mp, l, r_safe = 0.05, 1, 2, 0.1, 1, np.pi/4
 
-lip, d_max = 4, 0.001
+# System and training parameters
+Ts = 0.05          # Sampling time (s)
+gamma = 1          # CBF/constraint scaling factor
+mc = 2             # Cart mass
+mp = 0.1           # Pole mass
+l = 1              # Pole length
+r_safe = np.pi/4   # Radius of the safe set in (theta, omega) space
 
+# Lipschitz-related constants
+lip = 4            # Lipschitz constant bound for the CBF
+d_max = 0.001      # Maximum one-step state variation (robustness margin)
+
+# Initialize neural network controller
 ctrl_1 = controller()
 ctrl_1 = ctrl_1.to(device)
 
 
-# UNSAFE
+# =========================
+# Generate UNSAFE data
+# =========================
+
 n_unsafe = 5
 r_safe = np.pi/4
 theta = np.linspace(0, 2 * np.pi, n_unsafe)
@@ -152,11 +165,12 @@ unsafe_th_data = unsafe_th_data.to(device)
 unsafe_om_data = unsafe_om_data.to(device)
 
 
-# SAFE
+# =========================
+# Generate SAFE data
+# =========================
 
 n_safe = 10
 
-# Generate data using NumPy
 theta_np = 2 * np.pi * np.random.rand(n_safe)
 r_np = r_safe * np.sqrt(np.random.rand(n_safe))
 x_data = r_np * np.cos(theta_np)
@@ -170,19 +184,29 @@ safe_th_data = safe_th_data.to(device)
 safe_om_data = safe_om_data.to(device)
 
 
+# Initialize CBF polynomial coefficients
+# h(theta, omega) = A*omega^2 + B*theta^2 + C*theta*omega
+#                   + D*omega + E*theta + 1
 
 coeff = torch.tensor(
     [-1.9323, -2.4500, -0.3966,  0.0029, -0.3065],
     dtype=torch.double,
     requires_grad=True,
     device=device)
-#coeff.data = [-1.011, -1.02, -0.128, -0.175, -0.129, -0.178, 0.247]
 
+# Optimizer jointly updating:
+#   - CBF coefficients
+#   - Neural network controller parameters
 optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.4, momentum=0)
+
+# Flag indicating whether the CBF has been successfully verified
 flag_verified = 0
 
+# Tracks the number of iterations after reaching the maximum epoch
+# where optimization is not reset and the loss has not converged to zero
 iteration_reset = 0
 
+# Total number of optimization iterations performed
 overal_iteration = 0
 
 while not flag_verified:
