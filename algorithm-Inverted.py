@@ -16,8 +16,8 @@ print(device)
 class controller(nn.Module):
     def __init__(self):
         super(controller, self).__init__()
-        self.lay1 = nn.Linear(2, 15).double()
-        self.lay2 = nn.Linear(15, 1).double()
+        self.lay1 = nn.Linear(2, 8).double()
+        self.lay2 = nn.Linear(8, 1).double()
 
     def forward(self, u):
         x1 = torch.sigmoid(self.lay1(u))
