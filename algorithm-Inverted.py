@@ -1,0 +1,337 @@
+import numpy as np
+import Verification_CartPole_Unknown_Policy
+#import matplotlib.pyplot as plt
+import torch.optim as optim
+import torch
+from torch import nn
+from dreal import *
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
+
+
+
+
+class controller(nn.Module):
+    def __init__(self):
+        super(controller, self).__init__()
+        self.lay1 = nn.Linear(2, 15).double()
+        self.lay2 = nn.Linear(15, 1).double()
+
+    def forward(self, u):
+        x1 = torch.sigmoid(self.lay1(u))
+        hard_tanh = nn.Hardtanh(-80, 80)
+        y = hard_tanh(self.lay2(x1))
+        return y
+        
+    
+    
+
+def CBF(coeff, theta, omega):
+    
+    polynomial = coeff[0] * omega**2 + coeff[1] * theta**2 + coeff[2] * omega * theta + coeff[3] * omega + coeff[4] * theta + 1
+
+    return polynomial
+
+def CBF_next(coeff, theta, omega):
+    
+    theta_plus, omega_plus = dync(theta, omega, Ts)
+
+
+    polynomial = coeff[0] * omega_plus**2 + coeff[1] * theta_plus**2 + coeff[2] * omega_plus * theta_plus  + coeff[3] * omega_plus + coeff[4] * theta_plus + 1 
+
+    return polynomial
+    
+def Loss_unsafe_fcn(coeff, theta, omega):
+    return torch.sum(  torch.relu(CBF(coeff, theta, omega))  )
+
+
+def Loss_CBF_fcn(coeff, theta, omega, lip, d_max):
+    cbf_value = CBF(coeff, theta, omega)
+    cbf_next_value = CBF_next(coeff, theta, omega)
+    cbf_const = cbf_next_value - lip*d_max
+    return torch.sum(torch.relu( (-1 / (1 + torch.exp(-2*cbf_value)) + 0.45) * (cbf_const) ) )
+
+
+def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, lip, d_max):
+
+    w1, w2, w3, w4, w5, w6 = 1, 1, 1, 1, 1, 5
+    loss_unsafe  = w1*Loss_unsafe_fcn(coeff, unsafe_th_data, unsafe_om_data)
+    
+    
+    L_e = coeff[2]**2 - 4*coeff[1]*coeff[0]
+    loss_L = w2 * torch.relu ( L_e )
+    
+    Delta = coeff[1]*coeff[0] + 0.25*coeff[2]*coeff[4]*coeff[3] - 0.25*(coeff[1]*coeff[3]**2 + coeff[0]*coeff[4]**2 + coeff[2]**2)
+    loss_Delta = w3* torch.relu ( coeff[0]*Delta )
+    
+    
+    area_denominator = (L_e)**2 if L_e < 0 else 10  # Avoid division by zero
+    
+    area = -2 * 3.14 * (coeff[1]*coeff[3]**2 + coeff[0]*coeff[4]**2 - coeff[2]*coeff[4]*coeff[3] + L_e) * ( torch.sqrt(- L_e) ) /area_denominator
+    
+    loss_elipse = w4 * torch.relu( -area + 1 )
+    
+    #loss_ellipse = w2*( torch.relu( L_e + 1e-3 ) + torch.relu( c*delta_e + 1e-3 ) + torch.relu( -area + 3 ) )
+    
+    loss_cbf     = w5*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max)
+    
+
+    #grad_om = 2 * A * safe_om_data + C * safe_th_data + D
+    #grad_th = C * safe_om_data + 2 * B * safe_th_data + E
+    
+    #loss_lip = w6 * torch.sum( torch.relu(  grad_om**2 + grad_th**2 - lip**2 ) )
+    
+    loss_lip = w6 * lipschitz_penalty(coeff, safe_th_data, safe_om_data, lip)
+
+    #print("loss_lip   =  ", loss_lip)
+
+    return loss_unsafe + loss_L + loss_Delta + loss_elipse +  loss_cbf + loss_lip 
+
+def dync(theta, omega, Ts):
+
+    input_ctrl = torch.stack([theta, omega], dim=1)    
+    #x_plus = v*Ts + x
+    #v_plus = v + (Ts/(mc + mp*torch.sin(theta)**2))*( ctrl_1(input_ctrl).squeeze(1) + mp*torch.sin(theta)*(l*omega**2 - 9.81*torch.cos(theta)) )
+    theta_plus = omega*Ts + theta
+    omega_plus = omega + (Ts/(l*(mc + mp*torch.sin(theta)**2)))*( -ctrl_1(input_ctrl).squeeze(1)*torch.cos(theta) - mp*l*omega**2*torch.cos(theta)*torch.sin(theta) + (mc + mp)*9.81*torch.sin(theta) )
+    return theta_plus, omega_plus
+
+
+def lipschitz_penalty(coeff, theta, omega, L):
+    theta = theta.requires_grad_(True)
+    omega = omega.requires_grad_(True)
+
+    y = coeff[0] * omega**2 + coeff[1] * theta**2 + coeff[2] *  theta * omega + coeff[3] * omega + coeff[4] * theta + 1
+    
+    grad_outputs = torch.ones_like(y)
+    gradients = torch.autograd.grad(outputs=y, inputs=[theta, omega], grad_outputs=grad_outputs,
+                                    create_graph=True, retain_graph=True, only_inputs=True)
+
+    grad_x1, grad_x2 = gradients
+    grad_norm = torch.sqrt(grad_x1**2 + grad_x2**2)  # Compute ||∇f(x)||
+
+    cbf_value = CBF(coeff, theta, omega)
+
+    penalty = torch.sum( torch.relu( torch.relu(cbf_value + 0.001)* ((grad_norm - L)) ) )  # Penalize if greater than L
+
+    
+    return penalty
+
+
+
+
+
+
+
+####
+Ts, gamma, mc, mp, l, r_safe = 0.05, 1, 2, 0.1, 1, np.pi/4
+
+lip, d_max = 4, 0.001
+
+ctrl_1 = controller()
+ctrl_1 = ctrl_1.to(device)
+
+
+# UNSAFE
+n_unsafe = 5
+r_safe = np.pi/4
+theta = np.linspace(0, 2 * np.pi, n_unsafe)
+
+temp_1 = (r_safe + 1e-3) * np.cos(theta)
+temp_2 = (r_safe + 1e-3) * np.sin(theta)
+
+unsafe_th_data = torch.tensor(temp_1.T, dtype=torch.double, device = device)
+unsafe_om_data = torch.tensor(temp_2.T, dtype=torch.double, device = device)
+
+
+unsafe_th_data = unsafe_th_data.to(device)
+unsafe_om_data = unsafe_om_data.to(device)
+
+
+# SAFE
+
+n_safe = 10
+
+# Generate data using NumPy
+theta_np = 2 * np.pi * np.random.rand(n_safe)
+r_np = r_safe * np.sqrt(np.random.rand(n_safe))
+x_data = r_np * np.cos(theta_np)
+y_data = r_np * np.sin(theta_np)
+
+safe_th_data = torch.tensor(x_data, dtype=torch.double, device=device)
+safe_om_data = torch.tensor(y_data, dtype=torch.double, device=device)
+
+
+safe_th_data = safe_th_data.to(device)
+safe_om_data = safe_om_data.to(device)
+
+
+
+coeff = torch.tensor(
+    [-1.9323, -2.4500, -0.3966,  0.0029, -0.3065],
+    dtype=torch.double,
+    requires_grad=True,
+    device=device)
+#coeff.data = [-1.011, -1.02, -0.128, -0.175, -0.129, -0.178, 0.247]
+
+optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.4, momentum=0)
+flag_verified = 0
+
+iteration_reset = 0
+
+overal_iteration = 0
+
+while not flag_verified:
+    overal_iteration += 1
+    print("========================================= Overal Iteration = ", overal_iteration)
+    iteration_reset += 1
+    epoch = 0
+    flag_loss = 0
+    
+    #for epoch in range(60000):
+    #num_batches = 30
+    batch_size = 250
+    num_batches_unsafe = max(1, int(np.ceil(unsafe_th_data.shape[0] / batch_size)))
+    num_batches_safe = max(1, int(np.ceil(safe_th_data.shape[0] / batch_size)))
+
+    # Use the larger number of batches to ensure all samples are covered
+    num_batches = max(num_batches_unsafe, num_batches_safe)
+    print("num_batches   =  ", num_batches)
+    while epoch < 5000 and not flag_loss:
+        epoch += 1
+        epoch_loss = 0
+
+        indices_unsafe = torch.randperm(unsafe_th_data.shape[0])
+        indices_safe = torch.randperm(safe_th_data.shape[0])
+
+
+        
+        for batch_idx in range(num_batches):
+            
+
+            unsafe_start = batch_idx * batch_size
+            safe_start = batch_idx * batch_size
+
+            batch_unsafe_indices = indices_unsafe[unsafe_start : min(unsafe_start + batch_size, unsafe_th_data.shape[0])]
+            batch_safe_indices = indices_safe[safe_start : min(safe_start + batch_size, safe_th_data.shape[0])]
+
+
+            batch_unsafe_th = unsafe_th_data[batch_unsafe_indices]
+            batch_unsafe_om = unsafe_om_data[batch_unsafe_indices]
+            
+            batch_safe_th = safe_th_data[batch_safe_indices]
+            batch_safe_om = safe_om_data[batch_safe_indices]
+            
+            optimizer.zero_grad()  
+            
+            batch_loss = Loss_fcn(coeff,batch_unsafe_th, batch_unsafe_om, batch_safe_th, batch_safe_om, lip, d_max)
+
+            batch_loss.backward()
+            optimizer.step()
+            epoch_loss += batch_loss.item()  
+
+        if epoch % 10 == 0:
+            print("loss  =  ", epoch, epoch_loss)
+        if epoch_loss == 0: #and epoch > 00:
+            flag_loss = 1
+            print(epoch, epoch_loss)
+
+    print('coeff = ', coeff)
+    
+    if flag_loss:
+        print("BEFORE ~!!~Safe~!~!~ = ", 1e1*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-8)) )
+        print("~!!~CBF~!~!~ = ", 1e1*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max) )
+        print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, lip, d_max) )
+        iteration_reset = 0
+# Safety Check
+        coeff_py = coeff.detach().cpu().numpy()  # Convert PyTorch tensor to NumPy array
+        coeff_py = coeff_py.tolist()  # Convert NumPy array to a standard Python list
+
+        
+        theta = Variable("theta")
+        omega = Variable("omega")
+        
+        h = coeff_py[0] * omega**2 + coeff_py[1] * theta**2 + coeff_py[2] * omega * theta + coeff_py[3] * omega + coeff_py[4] * theta + 1
+        
+        f_sat = And( -(r_safe + 1) <= theta, theta <= (r_safe + 1), -(r_safe + 1) <= omega, omega <= (r_safe + 1), 1*1e-4 <= h, - theta**2  - omega**2 + (r_safe)**2 < -1.01*1e-4)
+        result = CheckSatisfiability(f_sat, 1e-4)
+        print("first safety checked finished !")
+        
+        if (result is not None):
+            print("safe counter example is found  =  ", result)
+            #print("safe set 2  =  ", result2)
+            #if (result is not None):
+
+            x_ce_th_tens = torch.tensor([(result[theta].lb() + result[theta].ub())/2], dtype=torch.double, device = device)
+            x_ce_om_tens = torch.tensor([(result[omega].lb() + result[omega].ub())/2], dtype=torch.double, device = device)
+            
+            unsafe_th_data = torch.cat((unsafe_th_data, x_ce_th_tens))
+            unsafe_om_data = torch.cat((unsafe_om_data, x_ce_om_tens))
+                        
+
+            CC = coeff_py[0] * x_ce_om_tens**2 + coeff_py[1] * x_ce_th_tens**2 + coeff_py[2] * x_ce_om_tens * x_ce_th_tens + coeff_py[3]* x_ce_om_tens + coeff_py[4]* x_ce_th_tens + 1
+               
+            print("~~~~~ h(x)  =   ", CC, "~~~~~ s(x)  =   ", -x_ce_th_tens**2 - x_ce_om_tens**2 + (r_safe)**2)
+        else:
+        
+            flag_verified, x_ce = Verification_CartPole_Unknown_Policy.verification_fcn(coeff_py[0], coeff_py[1], coeff_py[2], coeff_py[3], coeff_py[4], 1, Ts, 1, lip, d_max)
+            
+            #x_ce = np.concatenate(x_ce)
+            if not flag_verified:
+                print("counterexample ?= ", x_ce)
+
+                x_ce_th_tens = torch.tensor([x_ce[0]], dtype=torch.double, device = device)
+                x_ce_om_tens = torch.tensor([x_ce[1]], dtype=torch.double, device = device)
+                
+                safe_th_data = torch.cat((safe_th_data, x_ce_th_tens))
+                safe_om_data = torch.cat((safe_om_data, x_ce_om_tens))
+		#safe_th_data = torch.cat((safe_th_data, x_ce_th_tens.unsqueeze(0)))
+		#safe_om_data = torch.cat((safe_om_data, x_ce_om_tens.unsqueeze(0)))
+
+		    
+                #num_samples = 50  # Number of samples
+                #r = 0.01  # Radius
+                
+                #points = torch.randn(num_samples, 4, device = device)  # 4-dimensional space
+                #norms = points.norm(p=2, dim=1, keepdim=True)  # Calculate the norms of the points
+                #points_on_sphere = points / norms  # Normalize the points to lie on the unit hypersphere
+                #scaling_factors = torch.rand(num_samples, 1, device = device) 
+                #x_ce_tensor = torch.tensor(x_ce, dtype=torch.double, device = device)
+
+                #samples = r * points_on_sphere * scaling_factors + x_ce_tensor.unsqueeze(0)
+                
+                # Add the center point (x_ce) explicitly
+                #samples_with_center = torch.cat([samples, x_ce_tensor.unsqueeze(0)], dim=0)
+                
+                #print('result = ', flag_verified, x_ce_x_tens.cpu().numpy(), x_ce_v_tens.cpu().numpy(), x_ce_th_tens.cpu().numpy(), x_ce_om_tens.cpu().numpy())
+                
+                #for i in range(len(samples_with_center)):
+                #    safe_x_data = torch.cat((safe_x_data, samples_with_center[i, 0].unsqueeze(0)))
+                #    safe_v_data = torch.cat((safe_v_data, samples_with_center[i, 1].unsqueeze(0)))
+		#safe_th_data = torch.cat((safe_th_data, x_ce_th_tens.unsqueeze(0) ))
+		#safe_om_data = torch.cat((safe_om_data, x_ce_om_tens.unsqueeze(0) ))
+
+                cbf_value_temp = CBF(coeff, x_ce_th_tens, x_ce_om_tens)
+                cbf_next_value_temp = CBF_next(coeff, x_ce_th_tens, x_ce_om_tens)
+
+                loss_value_temp = Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, x_ce_th_tens, x_ce_om_tens, lip, d_max)
+                
+                print("~CBF!!~!~!~!~ = ",  cbf_value_temp)
+                print("~CBF next!!~!~!~!~ = ",  cbf_next_value_temp, "d = ", cbf_next_value_temp - lip*d_max)
+                print("~~~~~~~~~loss~~~ = ",  loss_value_temp )
+                #print("ajaaaaaaaaaaab", safe_x_data.device, samples_with_center.device)
+                print("After ~!Safe!= ", 1e2*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-4)) )
+                print("~!!~!CBF!~!~ = ", 1e2*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max) )
+                print("~ONE!!~!~!~!~ = ", 1e2*Loss_CBF_fcn(coeff, x_ce_th_tens, x_ce_om_tens, lip, d_max) )
+            else:
+                print("hoooooraaay verified +++++++++++ = ", coeff)
+
+    if iteration_reset >= 3:
+        iteration_reset = 0 
+        print("reset optimizer!!!!")
+        coeff = torch.tensor([-1,  -1,   -1, -1, 0], dtype=torch.double, requires_grad=True, device = device)
+        ctrl_1 = controller()
+        ctrl_1 = ctrl_1.to(device)
+        optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.2, momentum=0)
