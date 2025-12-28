@@ -215,7 +215,7 @@ while not flag_verified:
     iteration_reset += 1
 
     epoch = 0
-    flag_loss = 0
+    flag_loss = 0 # Flag set to 1 when the loss becomes zero
     
     batch_size = 250
     num_batches_unsafe = max(1, int(np.ceil(unsafe_th_data.shape[0] / batch_size)))
