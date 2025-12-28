@@ -29,9 +29,7 @@ where the safety objective is to keep the pole angle and angular velocity within
 a prescribed region:
 \[
 \theta^2 + \omega^2 \le (\pi/4)^2.
-\]
-
-A quadratic R-DTCBF is synthesized using the proposed CEGIS approach and verified
+\] A quadratic R-DTCBF is synthesized using the proposed CEGIS approach and verified
 over the entire state space of interest.
 ---
 
