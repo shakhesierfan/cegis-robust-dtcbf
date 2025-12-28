@@ -281,37 +281,6 @@ def verification_fcn(A, B, C, D, E, F, Ts, gamma, lip, d_max):
     u_max = 80
 
     
-# --- Figure setup ------------------------------------------------------------
-    #plt.ion()
-    #fig, ax = plt.subplots()
-    #ax.set_xlabel(r"$\theta$")
-    #ax.set_ylabel(r"$\omega$")    
-    #ax.set_aspect('equal', adjustable='box')
-    #ax.grid(True)
-    
-# --- Safe set boundary (circle of radius π/4) --------------------------------    
-    #radius = np.pi / 4
-    #circle = Circle((0, 0), radius,
-    #                edgecolor='m', facecolor='none', linewidth=1.5)
-    #ax.add_patch(circle)
-    
-# --- DTCBF zero-superlevel boundary: { (θ, ω) : Aω² + Bθ² + Cθω + Dω + Eθ + 1 = 0 } ---
-    #th_DTCBF = np.linspace(-3, 3, 400)
-    #om_DTCBF = np.linspace(-3, 3, 400)
-    #TH, OM = np.meshgrid(th_DTCBF, om_DTCBF)
-    
-    #DTCBF_plot = A*OM**2 + B*TH**2 + C*OM*TH + D*OM + E*TH + 1
-    #contours = ax.contour(TH, OM, DTCBF_plot, levels=[0], colors='k', linewidths=2)
-    
- # --- Colorbar for control input u --------------------------------------------           
-    #vmin, vmax = -u_max, u_max
-    #norm = Normalize(vmin=vmin, vmax=vmax)
-    #cmap = matplotlib.colormaps['turbo']
-    
-    #sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-    #sm.set_array([])
-    
-    #cbar = fig.colorbar(sm, ax=ax, label=r"$u$")
     
 # --- Initial domain X^(0) -----------------------------------------------------    
     th_LBD, th_UBD  = -np.pi/4, np.pi/4
@@ -423,9 +392,5 @@ def verification_fcn(A, B, C, D, E, F, Ts, gamma, lip, d_max):
                 rec_pos_om[current_index] = [om_L, (om_U + om_L)/2]
                 rec_pos_om.append( [(om_U + om_L)/2, om_U] )
  
-    #plt.ioff(); plt.show()
     return successful, x_cexample
     
-
-
-#verification_fcn(-1.9323, -2.4500, -0.3966,  0.0029, -0.3065, 1, 0.05, 1, 3.5, 0.001)
