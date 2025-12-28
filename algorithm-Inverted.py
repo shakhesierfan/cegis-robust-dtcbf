@@ -215,6 +215,7 @@ while not flag_verified:
 
     epoch = 0
     flag_loss = 0 # Flag set to 1 when the loss becomes zero
+    flag_nan  = 0
     
     batch_size = 250
     num_batches_unsafe = max(1, int(np.ceil(unsafe_th_data.shape[0] / batch_size)))
@@ -257,6 +258,10 @@ while not flag_verified:
             optimizer.step()
             epoch_loss += batch_loss.item()  
 
+        if math.isnan(epoch_loss):
+            flag_nan = 1
+            print("loss  =  ", epoch, epoch_loss)
+
         if epoch % 10 == 0:
             print("loss  =  ", epoch, epoch_loss)
         if epoch_loss == 0: #and epoch > 00:
@@ -264,6 +269,15 @@ while not flag_verified:
             print(epoch, epoch_loss)
 
     print('coeff = ', coeff)
+
+    if flag_nan:
+        iteration_reset = 0 
+        print("~~~~~~~~~~~~~nan reset optimizer~~~~~~~~~~!!!!")
+        coeff = (8 * torch.rand(5, dtype=torch.double, device=device) - 4).requires_grad_()
+        
+        ctrl_1 = controller()
+        ctrl_1 = ctrl_1.to(device)
+        optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.01, momentum=0)
     
     if flag_loss:
         print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, gamma, lip, d_max) )
