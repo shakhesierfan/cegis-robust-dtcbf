@@ -50,8 +50,12 @@ If you use this code, please cite the paper:
 
 ```bibtex
 @article{Shakhesi2025CEGISDTCBF,
-  title={Counterexample-Guided Synthesis of Robust Discrete-Time Control Barrier Functions},
-  author={Shakhesi, Erfan and Katriniok, Alexander and Heemels, W. P. M. H.},
-  journal={IEEE Control Systems Letters},
-  year={2025}
+  journal={IEEE Control Systems Letters}, 
+  title={Counterexample-Guided Synthesis of Robust Discrete-Time Control Barrier Functions}, 
+  year={2025},
+  volume={9},
+  number={},
+  pages={1574-1579},
+  keywords={Training;Safety;Optimization;Vectors;Discrete-time systems;Neural networks;Lyapunov methods;Learning systems;Data mining;Control systems;Control barrier functions;Lyapunov methods;neural networks;robust control},
+  doi={10.1109/LCSYS.2025.3578971}
 }
