@@ -56,7 +56,7 @@ def Loss_CBF_fcn(coeff, theta, omega, lip, d_max):
 
 def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, lip, d_max):
 
-    w1, w2, w3, w4, w5, w6 = 1, 1, 1, 1, 1, 5
+    w1, w2, w3, w4, w5, w6 = 1, 1, 1, 1, 1, 1
     loss_unsafe  = w1*Loss_unsafe_fcn(coeff, unsafe_th_data, unsafe_om_data)
     
     
@@ -73,19 +73,12 @@ def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, 
     
     loss_elipse = w4 * torch.relu( -area + 1 )
     
-    #loss_ellipse = w2*( torch.relu( L_e + 1e-3 ) + torch.relu( c*delta_e + 1e-3 ) + torch.relu( -area + 3 ) )
     
-    loss_cbf     = w5*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max)
+    loss_cbf = w5*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max)
     
-
-    #grad_om = 2 * A * safe_om_data + C * safe_th_data + D
-    #grad_th = C * safe_om_data + 2 * B * safe_th_data + E
-    
-    #loss_lip = w6 * torch.sum( torch.relu(  grad_om**2 + grad_th**2 - lip**2 ) )
     
     loss_lip = w6 * lipschitz_penalty(coeff, safe_th_data, safe_om_data, lip)
 
-    #print("loss_lip   =  ", loss_lip)
 
     return loss_unsafe + loss_L + loss_Delta + loss_elipse +  loss_cbf + loss_lip 
 
@@ -190,8 +183,6 @@ while not flag_verified:
     epoch = 0
     flag_loss = 0
     
-    #for epoch in range(60000):
-    #num_batches = 30
     batch_size = 250
     num_batches_unsafe = max(1, int(np.ceil(unsafe_th_data.shape[0] / batch_size)))
     num_batches_safe = max(1, int(np.ceil(safe_th_data.shape[0] / batch_size)))
@@ -199,6 +190,7 @@ while not flag_verified:
     # Use the larger number of batches to ensure all samples are covered
     num_batches = max(num_batches_unsafe, num_batches_safe)
     print("num_batches   =  ", num_batches)
+
     while epoch < 5000 and not flag_loss:
         epoch += 1
         epoch_loss = 0
@@ -245,7 +237,9 @@ while not flag_verified:
         print("~!!~CBF~!~!~ = ", 1e1*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max) )
         print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, lip, d_max) )
         iteration_reset = 0
+
 # Safety Check
+
         coeff_py = coeff.detach().cpu().numpy()  # Convert PyTorch tensor to NumPy array
         coeff_py = coeff_py.tolist()  # Convert NumPy array to a standard Python list
 
@@ -261,8 +255,6 @@ while not flag_verified:
         
         if (result is not None):
             print("safe counter example is found  =  ", result)
-            #print("safe set 2  =  ", result2)
-            #if (result is not None):
 
             x_ce_th_tens = torch.tensor([(result[theta].lb() + result[theta].ub())/2], dtype=torch.double, device = device)
             x_ce_om_tens = torch.tensor([(result[omega].lb() + result[omega].ub())/2], dtype=torch.double, device = device)
@@ -278,7 +270,6 @@ while not flag_verified:
         
             flag_verified, x_ce = Verification_CartPole_Unknown_Policy.verification_fcn(coeff_py[0], coeff_py[1], coeff_py[2], coeff_py[3], coeff_py[4], 1, Ts, 1, lip, d_max)
             
-            #x_ce = np.concatenate(x_ce)
             if not flag_verified:
                 print("counterexample ?= ", x_ce)
 
@@ -287,31 +278,7 @@ while not flag_verified:
                 
                 safe_th_data = torch.cat((safe_th_data, x_ce_th_tens))
                 safe_om_data = torch.cat((safe_om_data, x_ce_om_tens))
-		#safe_th_data = torch.cat((safe_th_data, x_ce_th_tens.unsqueeze(0)))
-		#safe_om_data = torch.cat((safe_om_data, x_ce_om_tens.unsqueeze(0)))
 
-		    
-                #num_samples = 50  # Number of samples
-                #r = 0.01  # Radius
-                
-                #points = torch.randn(num_samples, 4, device = device)  # 4-dimensional space
-                #norms = points.norm(p=2, dim=1, keepdim=True)  # Calculate the norms of the points
-                #points_on_sphere = points / norms  # Normalize the points to lie on the unit hypersphere
-                #scaling_factors = torch.rand(num_samples, 1, device = device) 
-                #x_ce_tensor = torch.tensor(x_ce, dtype=torch.double, device = device)
-
-                #samples = r * points_on_sphere * scaling_factors + x_ce_tensor.unsqueeze(0)
-                
-                # Add the center point (x_ce) explicitly
-                #samples_with_center = torch.cat([samples, x_ce_tensor.unsqueeze(0)], dim=0)
-                
-                #print('result = ', flag_verified, x_ce_x_tens.cpu().numpy(), x_ce_v_tens.cpu().numpy(), x_ce_th_tens.cpu().numpy(), x_ce_om_tens.cpu().numpy())
-                
-                #for i in range(len(samples_with_center)):
-                #    safe_x_data = torch.cat((safe_x_data, samples_with_center[i, 0].unsqueeze(0)))
-                #    safe_v_data = torch.cat((safe_v_data, samples_with_center[i, 1].unsqueeze(0)))
-		#safe_th_data = torch.cat((safe_th_data, x_ce_th_tens.unsqueeze(0) ))
-		#safe_om_data = torch.cat((safe_om_data, x_ce_om_tens.unsqueeze(0) ))
 
                 cbf_value_temp = CBF(coeff, x_ce_th_tens, x_ce_om_tens)
                 cbf_next_value_temp = CBF_next(coeff, x_ce_th_tens, x_ce_om_tens)
@@ -321,7 +288,6 @@ while not flag_verified:
                 print("~CBF!!~!~!~!~ = ",  cbf_value_temp)
                 print("~CBF next!!~!~!~!~ = ",  cbf_next_value_temp, "d = ", cbf_next_value_temp - lip*d_max)
                 print("~~~~~~~~~loss~~~ = ",  loss_value_temp )
-                #print("ajaaaaaaaaaaab", safe_x_data.device, samples_with_center.device)
                 print("After ~!Safe!= ", 1e2*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-4)) )
                 print("~!!~!CBF!~!~ = ", 1e2*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max) )
                 print("~ONE!!~!~!~!~ = ", 1e2*Loss_CBF_fcn(coeff, x_ce_th_tens, x_ce_om_tens, lip, d_max) )
