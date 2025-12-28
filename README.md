@@ -4,7 +4,8 @@ This repository accompanies the paper
 
 **Counterexample-Guided Synthesis of Robust Discrete-Time Control Barrier Functions**  
 Erfan Shakhesi, Alexander Katriniok, and W. P. M. H. Heemels  
-*IEEE Control Systems Letters*
+*IEEE Control Systems Letters*, 2025.
+DOI: 10.1109/LCSYS.2025.3578971
 
 ---
 
