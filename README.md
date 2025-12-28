@@ -10,7 +10,7 @@ Erfan Shakhesi, Alexander Katriniok, and W. P. M. H. Heemels
 
 ## Overview
 
-This work proposes a **counterexample-guided (CEGIS) framework** for synthesizing
+This work proposes a **counterexample-guided framework** for synthesizing
 **robust discrete-time control barrier functions (R-DTCBFs)**.
 The method iteratively alternates between:
 - training candidate R-DTCBFs on sampled states, and
