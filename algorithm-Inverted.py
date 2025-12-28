@@ -12,7 +12,7 @@ print(device)
 
 
 
-
+# Neural network controller definition
 class controller(nn.Module):
     def __init__(self):
         super(controller, self).__init__()
@@ -27,13 +27,14 @@ class controller(nn.Module):
         
     
     
-
+# Control Barrier Function (CBF) definition
 def CBF(coeff, theta, omega):
     
     polynomial = coeff[0] * omega**2 + coeff[1] * theta**2 + coeff[2] * omega * theta + coeff[3] * omega + coeff[4] * theta + 1
 
     return polynomial
 
+# CBF evaluated at the next state
 def CBF_next(coeff, theta, omega):
     
     theta_plus, omega_plus = dync(theta, omega, Ts)
@@ -43,18 +44,23 @@ def CBF_next(coeff, theta, omega):
 
     return polynomial
     
+
+# Loss for unsafe states (CBF should be negative)
 def Loss_unsafe_fcn(coeff, theta, omega):
     return torch.sum(  torch.relu(CBF(coeff, theta, omega))  )
 
 
-def Loss_CBF_fcn(coeff, theta, omega, lip, d_max):
+# Penalize violations of the CBF constraint: h(x⁺) - (1-gamma)h(x) ≥  - L·d_max
+
+def Loss_CBF_fcn(coeff, theta, omega, gamma, lip, d_max):
     cbf_value = CBF(coeff, theta, omega)
-    cbf_next_value = CBF_next(coeff, theta, omega)
+    cbf_next_value = CBF_next(coeff, theta, omega) - (1-gamma)*cbf_value
     cbf_const = cbf_next_value - lip*d_max
     return torch.sum(torch.relu( (-1 / (1 + torch.exp(-2*cbf_value)) + 0.45) * (cbf_const) ) )
 
 
-def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, lip, d_max):
+# Total loss function
+def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, gamma, lip, d_max):
 
     w1, w2, w3, w4, w5, w6 = 1, 1, 1, 1, 1, 1
     loss_unsafe  = w1*Loss_unsafe_fcn(coeff, unsafe_th_data, unsafe_om_data)
@@ -74,7 +80,7 @@ def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, 
     loss_elipse = w4 * torch.relu( -area + 1 )
     
     
-    loss_cbf = w5*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max)
+    loss_cbf = w5*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max)
     
     
     loss_lip = w6 * lipschitz_penalty(coeff, safe_th_data, safe_om_data, lip)
@@ -82,6 +88,8 @@ def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, 
 
     return loss_unsafe + loss_L + loss_Delta + loss_elipse +  loss_cbf + loss_lip 
 
+
+# System dynamics (discrete-time)
 def dync(theta, omega, Ts):
 
     input_ctrl = torch.stack([theta, omega], dim=1)    
@@ -92,6 +100,7 @@ def dync(theta, omega, Ts):
     return theta_plus, omega_plus
 
 
+# Lipschitz continuity penalty for the CBF
 def lipschitz_penalty(coeff, theta, omega, L):
     theta = theta.requires_grad_(True)
     omega = omega.requires_grad_(True)
@@ -218,7 +227,7 @@ while not flag_verified:
             
             optimizer.zero_grad()  
             
-            batch_loss = Loss_fcn(coeff,batch_unsafe_th, batch_unsafe_om, batch_safe_th, batch_safe_om, lip, d_max)
+            batch_loss = Loss_fcn(coeff,batch_unsafe_th, batch_unsafe_om, batch_safe_th, batch_safe_om, gamma, lip, d_max)
 
             batch_loss.backward()
             optimizer.step()
@@ -234,8 +243,8 @@ while not flag_verified:
     
     if flag_loss:
         print("BEFORE ~!!~Safe~!~!~ = ", 1e1*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-8)) )
-        print("~!!~CBF~!~!~ = ", 1e1*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max) )
-        print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, lip, d_max) )
+        print("~!!~CBF~!~!~ = ", 1e1*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max) )
+        print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, gamma, lip, d_max) )
         iteration_reset = 0
 
 # Safety Check
@@ -283,14 +292,14 @@ while not flag_verified:
                 cbf_value_temp = CBF(coeff, x_ce_th_tens, x_ce_om_tens)
                 cbf_next_value_temp = CBF_next(coeff, x_ce_th_tens, x_ce_om_tens)
 
-                loss_value_temp = Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, x_ce_th_tens, x_ce_om_tens, lip, d_max)
+                loss_value_temp = Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, x_ce_th_tens, x_ce_om_tens, gamma, lip, d_max)
                 
                 print("~CBF!!~!~!~!~ = ",  cbf_value_temp)
                 print("~CBF next!!~!~!~!~ = ",  cbf_next_value_temp, "d = ", cbf_next_value_temp - lip*d_max)
                 print("~~~~~~~~~loss~~~ = ",  loss_value_temp )
                 print("After ~!Safe!= ", 1e2*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-4)) )
-                print("~!!~!CBF!~!~ = ", 1e2*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, lip, d_max) )
-                print("~ONE!!~!~!~!~ = ", 1e2*Loss_CBF_fcn(coeff, x_ce_th_tens, x_ce_om_tens, lip, d_max) )
+                print("~!!~!CBF!~!~ = ", 1e2*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max) )
+                print("~ONE!!~!~!~!~ = ", 1e2*Loss_CBF_fcn(coeff, x_ce_th_tens, x_ce_om_tens, gamma, lip, d_max) )
             else:
                 print("hoooooraaay verified +++++++++++ = ", coeff)
 
