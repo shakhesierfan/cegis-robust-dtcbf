@@ -37,7 +37,9 @@ over the entire state space of interest.
 
 ## Usage
 
-Run algorithm-Inverted.py to execute the algorithm. Requires NumPy, PyTorch, dReal, and AMPL (with the Couenne solver).
+Run `algorithm-Inverted.py` to execute the algorithm.
+
+Dependencies: NumPy, PyTorch, dReal, and AMPL (with the Couenne solver).
 
 ## Citation
 
