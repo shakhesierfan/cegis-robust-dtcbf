@@ -41,6 +41,8 @@ Run `algorithm-Inverted.py` to execute the algorithm.
 
 Dependencies: NumPy, PyTorch, dReal, and AMPL (with the Couenne solver).
 
+For AMPL installation instructions, please refer the [AMPL documentation](https://dev.ampl.com/ampl/install.html).
+
 ## Citation
 
 If you use this code, please cite the paper:
