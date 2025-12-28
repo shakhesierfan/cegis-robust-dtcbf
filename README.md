@@ -35,3 +35,17 @@ A quadratic R-DTCBF is synthesized using the proposed CEGIS approach and verifie
 over the entire state space of interest.
 ---
 
+
+## Citation
+
+If you use this code, please cite the paper:
+
+```bibtex
+@article{Shakhesi2025CEGISDTCBF,
+  title={Counterexample-Guided Synthesis of Robust Discrete-Time Control Barrier Functions},
+  author={Shakhesi, Erfan and Katriniok, Alexander and Heemels, W. P. M. H.},
+  journal={IEEE Control Systems Letters},
+  year={2025}
+}
+
+
