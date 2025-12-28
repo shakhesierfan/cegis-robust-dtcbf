@@ -129,7 +129,7 @@ def lipschitz_penalty(coeff, theta, omega, L):
 
 ####
 
-# System and training parameters
+# System parameters
 Ts = 0.05          # Sampling time (s)
 gamma = 1          # CBF/constraint scaling factor
 mc = 2             # Cart mass
@@ -151,7 +151,6 @@ ctrl_1 = ctrl_1.to(device)
 # =========================
 
 n_unsafe = 5
-r_safe = np.pi/4
 theta = np.linspace(0, 2 * np.pi, n_unsafe)
 
 temp_1 = (r_safe + 1e-3) * np.cos(theta)
