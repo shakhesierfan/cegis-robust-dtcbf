@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch
 from torch import nn
 from dreal import *
-
+import math
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -16,8 +16,8 @@ print(device)
 class controller(nn.Module):
     def __init__(self):
         super(controller, self).__init__()
-        self.lay1 = nn.Linear(2, 8).double()
-        self.lay2 = nn.Linear(8, 1).double()
+        self.lay1 = nn.Linear(2, 16).double()
+        self.lay2 = nn.Linear(16, 1).double()
 
     def forward(self, u):
         x1 = torch.sigmoid(self.lay1(u))
@@ -77,7 +77,7 @@ def Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, 
     
     area = -2 * 3.14 * (coeff[1]*coeff[3]**2 + coeff[0]*coeff[4]**2 - coeff[2]*coeff[4]*coeff[3] + L_e) * ( torch.sqrt(- L_e) ) /area_denominator
     
-    loss_elipse = w4 * torch.relu( -area + 1 )
+    loss_elipse = w4 * torch.relu( -area + 0.2 )
     
     
     loss_cbf = w5*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max)
@@ -112,11 +112,11 @@ def lipschitz_penalty(coeff, theta, omega, L):
                                     create_graph=True, retain_graph=True, only_inputs=True)
 
     grad_x1, grad_x2 = gradients
-    grad_norm = torch.sqrt(grad_x1**2 + grad_x2**2)  # Compute ||∇f(x)||
-
+    #grad_norm = torch.sqrt(grad_x1**2 + grad_x2**2)  # Compute ||∇f(x)||
+    grad_norm_square = grad_x1**2 + grad_x2**2    
     cbf_value = CBF(coeff, theta, omega)
 
-    penalty = torch.sum( torch.relu( torch.relu(cbf_value + 0.001)* ((grad_norm - L)) ) )  # Penalize if greater than L
+    penalty = torch.sum( torch.relu( torch.relu(cbf_value + 0.001)* ((grad_norm_square - L**2)) ) )  # Penalize if greater than L
 
     
     return penalty
@@ -130,7 +130,7 @@ def lipschitz_penalty(coeff, theta, omega, L):
 ####
 
 # System parameters
-Ts = 0.05          # Sampling time (s)
+Ts = 0.1          # Sampling time (s)
 gamma = 1          # gamma
 mc = 2             # Cart mass
 mp = 0.1           # Pole mass
@@ -139,7 +139,7 @@ r_safe = np.pi/4   # Radius of the safe set in (theta, omega) space
 
 # Lipschitz-related constants
 lip = 4            # Lipschitz constant bound for the CBF
-d_max = 0.001      # Maximum one-step state variation (robustness margin)
+d_max = 0.008       # Maximum one-step state variation (robustness margin)
 
 # Initialize neural network controller
 ctrl_1 = controller()
@@ -168,10 +168,10 @@ unsafe_om_data = unsafe_om_data.to(device)
 # Generate SAFE data
 # =========================
 
-n_safe = 10
+n_safe = 100
 
 theta_np = 2 * np.pi * np.random.rand(n_safe)
-r_np = r_safe * np.sqrt(np.random.rand(n_safe))
+r_np = (r_safe - 0.01) * np.sqrt(np.random.rand(n_safe))
 x_data = r_np * np.cos(theta_np)
 y_data = r_np * np.sin(theta_np)
 
@@ -183,12 +183,15 @@ safe_th_data = safe_th_data.to(device)
 safe_om_data = safe_om_data.to(device)
 
 
+#print("safe_th_data = ", safe_th_data)
+#print("safe_om_data = ", safe_om_data)
+
 # Initialize CBF polynomial coefficients
 # h(theta, omega) = A*omega^2 + B*theta^2 + C*theta*omega
 #                   + D*omega + E*theta + 1
 
 coeff = torch.tensor(
-    [-1.9323, -2.4500, -0.3966,  0.0029, -0.3065],
+    [-1, -1, 0,  0, 0],
     dtype=torch.double,
     requires_grad=True,
     device=device)
@@ -196,7 +199,7 @@ coeff = torch.tensor(
 # Optimizer jointly updating:
 #   - CBF coefficients
 #   - Neural network controller parameters
-optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.4, momentum=0)
+optimizer = optim.SGD([coeff, *ctrl_1.parameters()],     lr=0.5, momentum=0.95)
 
 # Flag indicating whether the CBF has been successfully verified
 flag_verified = 0
@@ -216,8 +219,8 @@ while not flag_verified:
     epoch = 0
     flag_loss = 0 # Flag set to 1 when the loss becomes zero
     flag_nan  = 0
-    
-    batch_size = 250
+
+    batch_size = 60
     num_batches_unsafe = max(1, int(np.ceil(unsafe_th_data.shape[0] / batch_size)))
     num_batches_safe = max(1, int(np.ceil(safe_th_data.shape[0] / batch_size)))
 
@@ -225,7 +228,7 @@ while not flag_verified:
     num_batches = max(num_batches_unsafe, num_batches_safe)
     print("num_batches   =  ", num_batches)
 
-    while epoch < 5000 and not flag_loss:
+    while epoch < 5000 and not flag_loss and not flag_nan:
         epoch += 1
         epoch_loss = 0
 
@@ -236,13 +239,12 @@ while not flag_verified:
         
         for batch_idx in range(num_batches):
             
-
             unsafe_start = batch_idx * batch_size
             safe_start = batch_idx * batch_size
 
             batch_unsafe_indices = indices_unsafe[unsafe_start : min(unsafe_start + batch_size, unsafe_th_data.shape[0])]
             batch_safe_indices = indices_safe[safe_start : min(safe_start + batch_size, safe_th_data.shape[0])]
-
+            
 
             batch_unsafe_th = unsafe_th_data[batch_unsafe_indices]
             batch_unsafe_om = unsafe_om_data[batch_unsafe_indices]
@@ -258,29 +260,36 @@ while not flag_verified:
             optimizer.step()
             epoch_loss += batch_loss.item()  
 
+
         if math.isnan(epoch_loss):
             flag_nan = 1
             print("loss  =  ", epoch, epoch_loss)
 
-        if epoch % 10 == 0:
+        if epoch % 100 == 0:
             print("loss  =  ", epoch, epoch_loss)
         if epoch_loss == 0: #and epoch > 00:
             flag_loss = 1
             print(epoch, epoch_loss)
 
-    print('coeff = ', coeff)
-
+    
     if flag_nan:
         iteration_reset = 0 
         print("~~~~~~~~~~~~~nan reset optimizer~~~~~~~~~~!!!!")
         coeff = (8 * torch.rand(5, dtype=torch.double, device=device) - 4).requires_grad_()
-        
+
         ctrl_1 = controller()
         ctrl_1 = ctrl_1.to(device)
-        optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.01, momentum=0)
+        optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.5, momentum=0)
+
+
+    print('coeff = ', coeff)
+
+
     
     if flag_loss:
-        print("!!!!!!!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, gamma, lip, d_max) )
+        #print("BEFORE ~!!~Safe~!~!~ = ", 1e1*torch.sum(torch.relu(CBF(coeff, unsafe_th_data, unsafe_om_data) + 1e-8)) )
+        #print("~!!~CBF~!~!~ = ", 1e1*Loss_CBF_fcn(coeff, safe_th_data, safe_om_data, gamma, lip, d_max) )
+        print("!!!!!BEFORE!!!!!!! = ", Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, safe_th_data, safe_om_data, gamma, lip, d_max) )
         iteration_reset = 0
 
 # Safety Check
@@ -325,20 +334,17 @@ while not flag_verified:
                 safe_om_data = torch.cat((safe_om_data, x_ce_om_tens))
 
 
-                cbf_value_temp = CBF(coeff, x_ce_th_tens, x_ce_om_tens)
-                cbf_next_value_temp = CBF_next(coeff, x_ce_th_tens, x_ce_om_tens)
-
                 loss_value_temp = Loss_fcn(coeff, unsafe_th_data, unsafe_om_data, x_ce_th_tens, x_ce_om_tens, gamma, lip, d_max)
-                
                 print("~~~~~~~~~loss~~~ = ",  loss_value_temp )
+                
             else:
                 print("hoooooraaay verified +++++++++++ = ", coeff)
 
     if iteration_reset >= 3:
         iteration_reset = 0 
         print("reset optimizer!!!!")
-        #coeff = torch.tensor([-1,  -1,   -1, -1, 0], dtype=torch.double, requires_grad=True, device = device)
+        #coeff = torch.tensor([-1,  -1,   0, 0, 0], dtype=torch.double, requires_grad=True, device = device)
         coeff = (4 * torch.rand(5, dtype=torch.double, device=device) - 2).requires_grad_()
         ctrl_1 = controller()
         ctrl_1 = ctrl_1.to(device)
-        optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.2, momentum=0)
+        optimizer = optim.SGD([coeff, *ctrl_1.parameters()], lr= 0.1, momentum=0)
