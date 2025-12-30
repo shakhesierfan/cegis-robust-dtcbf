@@ -101,7 +101,7 @@ https://ampl.com/ce
 For AMPL installation instructions, please refer to [the AMPL documentation](https://dev.ampl.com/ampl/install.html)
 
 --------------------------------------------------
-7. Install Couenne Solver (via AMPL)
+5. Install Couenne Solver (via AMPL)
 --------------------------------------------------
 ```bash
 python3 -m amplpy.modules install coin
