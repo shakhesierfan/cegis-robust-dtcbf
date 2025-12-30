@@ -63,29 +63,100 @@ The following Python packages are required:
 - `amplpy`
 
 ---
+Installation & Environment Setup
+================================
 
-## Setup
+This project has been tested on Ubuntu 22.04.
 
-### 1. Install System Dependencies
+The following steps describe how to install all required system dependencies,
+Python packages, and external solvers.
 
-```bash
+--------------------------------------------------
+System Requirements
+--------------------------------------------------
+
+Operating System: Ubuntu 22.04
+Python: 3.8 or newer
+Package Manager: python3-pip
+
+--------------------------------------------------
+1. Update System and Install pip
+--------------------------------------------------
+
 sudo apt update
-sudo apt install python3-pip
+sudo apt install -y python3-pip
+
+--------------------------------------------------
+2. Install Required Python Packages
+--------------------------------------------------
+
+python3 -m pip install --upgrade pip
 python3 -m pip install numpy
 python3 -m pip install pyomo
 python3 -m pip install pyinterval
 python3 -m pip install casadi
 python3 -m pip install torch
 
----
+--------------------------------------------------
+3. Install dReal Solver
+--------------------------------------------------
 
+For Ubuntu 22.04:
 
-### 2. Install dReal (SMT solver)
-```bash
-sudo apt-get install curl
+sudo apt-get install -y curl
 curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
-sudo apt-get install curl curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/20.04/install.sh | sudo bash
-pip3 install dreal
+
+For Ubuntu 20.04 (optional):
+
+sudo apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/20.04/install.sh | sudo bash
+
+--------------------------------------------------
+4. Install AMPL and Python API
+--------------------------------------------------
+
+python3 -m pip install amplpy --upgrade
+
+--------------------------------------------------
+5. Install AMPL Solver Modules
+--------------------------------------------------
+
+python3 -m amplpy.modules install highs gurobi
+
+Note:
+Gurobi requires a valid license.
+
+--------------------------------------------------
+6. Activate AMPL License
+--------------------------------------------------
+
+python3 -m amplpy.modules activate <license-uuid>
+
+A free AMPL Community Edition license can be obtained from:
+https://ampl.com/ce
+
+--------------------------------------------------
+7. Install Couenne Solver (via AMPL)
+--------------------------------------------------
+
+python3 -m amplpy.modules install coin
+
+--------------------------------------------------
+8. Verification (Optional)
+--------------------------------------------------
+
+python3 -c "import numpy, pyomo, casadi, torch, amplpy"
+
+If no errors are reported, the installation is successful.
+
+--------------------------------------------------
+Notes
+--------------------------------------------------
+
+- Ensure that python3 and pip refer to the same Python environment.
+- Solver licenses (e.g., Gurobi) must be configured separately.
+- This setup has been verified on Ubuntu 22.04.
+
 
 
 ---
