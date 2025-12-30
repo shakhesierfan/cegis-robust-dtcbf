@@ -82,10 +82,10 @@ Package Manager: python3-pip
 --------------------------------------------------
 1. Update System and Install pip
 --------------------------------------------------
-
+```bash
 sudo apt update
 sudo apt install -y python3-pip
-
+```
 --------------------------------------------------
 2. Install Required Python Packages
 --------------------------------------------------
