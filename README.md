@@ -105,25 +105,12 @@ sudo apt-get install -y curl
 curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
 
 --------------------------------------------------
-4. Install AMPL and Python API
+4. Install AMPL
 --------------------------------------------------
 
-python3 -m pip install amplpy --upgrade
-
---------------------------------------------------
-5. Install AMPL Solver Modules
---------------------------------------------------
-
-python3 -m amplpy.modules install highs gurobi
-
-Note:
-Gurobi requires a valid license.
-
---------------------------------------------------
-6. Activate AMPL License
---------------------------------------------------
-
-python3 -m amplpy.modules activate <license-uuid>
+$ python3 -m pip install amplpy --upgrade
+$ python3 -m amplpy.modules install highs gurobi
+$ python3 -m amplpy.modules activate <license-uuid>
 
 A free AMPL Community Edition license can be obtained from:
 https://ampl.com/ce
