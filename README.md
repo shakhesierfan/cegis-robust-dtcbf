@@ -101,15 +101,8 @@ python3 -m pip install torch
 3. Install dReal Solver
 --------------------------------------------------
 
-For Ubuntu 22.04:
-
 sudo apt-get install -y curl
 curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
-
-For Ubuntu 20.04 (optional):
-
-sudo apt-get install -y curl
-curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/20.04/install.sh | sudo bash
 
 --------------------------------------------------
 4. Install AMPL and Python API
@@ -140,23 +133,6 @@ https://ampl.com/ce
 --------------------------------------------------
 
 python3 -m amplpy.modules install coin
-
---------------------------------------------------
-8. Verification (Optional)
---------------------------------------------------
-
-python3 -c "import numpy, pyomo, casadi, torch, amplpy"
-
-If no errors are reported, the installation is successful.
-
---------------------------------------------------
-Notes
---------------------------------------------------
-
-- Ensure that python3 and pip refer to the same Python environment.
-- Solver licenses (e.g., Gurobi) must be configured separately.
-- This setup has been verified on Ubuntu 22.04.
-
 
 
 ---
