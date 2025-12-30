@@ -100,18 +100,18 @@ $ python3 -m pip install torch
 --------------------------------------------------
 3. Install dReal Solver
 --------------------------------------------------
-
-sudo apt-get install -y curl
-curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
-
+```bash
+$ sudo apt-get install -y curl
+$ curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
+```
 --------------------------------------------------
 4. Install AMPL
 --------------------------------------------------
-
+```bash
 $ python3 -m pip install amplpy --upgrade
 $ python3 -m amplpy.modules install highs gurobi
 $ python3 -m amplpy.modules activate <license-uuid>
-
+```
 A free AMPL Community Edition license can be obtained from:
 https://ampl.com/ce
 
