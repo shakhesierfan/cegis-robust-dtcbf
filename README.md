@@ -94,6 +94,7 @@ python3 -m pip install amplpy --upgrade
 python3 -m amplpy.modules install highs gurobi
 python3 -m amplpy.modules activate <license-uuid>
 ```
+
 A free AMPL Community Edition license can be obtained from:
 https://ampl.com/ce
 
