@@ -40,9 +40,44 @@ over the entire state space of interest.
 
 Run `algorithm-Inverted.py` to execute the algorithm.
 
-Dependencies: NumPy, PyTorch, dReal, and AMPL (with the Couenne solver).
+Dependencies: NumPy, PyTorch, Pyomo, dReal, and AMPL (with the Couenne solver).
 
 For AMPL installation instructions, please refer to [the AMPL documentation](https://dev.ampl.com/ampl/install.html).
+# Installation
+
+This project has been tested on **Ubuntu 22.04**.
+
+
+---
+
+### Python Dependencies
+
+The following Python packages are required:
+
+- `numpy`
+- `pyomo`
+- `pyinterval`
+- `casadi`
+- `torch`
+- `dreal`
+- `amplpy`
+
+---
+
+## Setup
+
+### 1. Install System Dependencies
+
+```bash
+sudo apt update
+sudo apt install python3-pip
+python3 -m pip install numpy
+python3 -m pip install pyomo
+python3 -m pip install pyinterval
+python3 -m pip install casadi
+python3 -m pip install torch
+
+
 
 ## Citation
 
