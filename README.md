@@ -72,14 +72,6 @@ The following steps describe how to install all required system dependencies,
 Python packages, and external solvers.
 
 --------------------------------------------------
-System Requirements
---------------------------------------------------
-
-Operating System: Ubuntu 22.04
-Python: 3.8 or newer
-Package Manager: python3-pip
-
---------------------------------------------------
 1. Update System and Install pip
 --------------------------------------------------
 ```bash
