@@ -77,12 +77,19 @@ python3 -m pip install pyinterval
 python3 -m pip install casadi
 python3 -m pip install torch
 
+---
+
+
 ### 2. Install dReal (SMT solver)
 ```bash
 sudo apt-get install curl
 curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
 sudo apt-get install curl curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/20.04/install.sh | sudo bash
 pip3 install dreal
+
+
+---
+
 
 ## Citation
 
