@@ -96,7 +96,7 @@ $ python3 -m pip install pyomo
 $ python3 -m pip install pyinterval
 $ python3 -m pip install casadi
 $ python3 -m pip install torch
-
+```
 --------------------------------------------------
 3. Install dReal Solver
 --------------------------------------------------
