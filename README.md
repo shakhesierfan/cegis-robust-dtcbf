@@ -90,27 +90,27 @@ sudo apt install -y python3-pip
 2. Install Required Python Packages
 --------------------------------------------------
 ```bash
-$ python3 -m pip install --upgrade pip
-$ python3 -m pip install numpy
-$ python3 -m pip install pyomo
-$ python3 -m pip install pyinterval
-$ python3 -m pip install casadi
-$ python3 -m pip install torch
+python3 -m pip install --upgrade pip
+python3 -m pip install numpy
+python3 -m pip install pyomo
+python3 -m pip install pyinterval
+python3 -m pip install casadi
+python3 -m pip install torch
 ```
 --------------------------------------------------
 3. Install dReal Solver
 --------------------------------------------------
 ```bash
-$ sudo apt-get install -y curl
-$ curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
+sudo apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
 ```
 --------------------------------------------------
 4. Install AMPL
 --------------------------------------------------
 ```bash
-$ python3 -m pip install amplpy --upgrade
-$ python3 -m amplpy.modules install highs gurobi
-$ python3 -m amplpy.modules activate <license-uuid>
+python3 -m pip install amplpy --upgrade
+python3 -m amplpy.modules install highs gurobi
+python3 -m amplpy.modules activate <license-uuid>
 ```
 A free AMPL Community Edition license can be obtained from:
 https://ampl.com/ce
@@ -118,9 +118,9 @@ https://ampl.com/ce
 --------------------------------------------------
 7. Install Couenne Solver (via AMPL)
 --------------------------------------------------
-
+```bash
 python3 -m amplpy.modules install coin
-
+```
 
 ---
 
