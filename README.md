@@ -84,13 +84,12 @@ Package Manager: python3-pip
 --------------------------------------------------
 ```bash
 sudo apt update
-sudo apt install -y python3-pip
+sudo apt install python3-pip
 ```
 --------------------------------------------------
 2. Install Required Python Packages
 --------------------------------------------------
 ```bash
-python3 -m pip install --upgrade pip
 python3 -m pip install numpy
 python3 -m pip install pyomo
 python3 -m pip install pyinterval
@@ -101,8 +100,8 @@ python3 -m pip install torch
 3. Install dReal Solver
 --------------------------------------------------
 ```bash
-sudo apt-get install -y curl
 curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22.04/install.sh | sudo bash
+python3 -m pip install dreal
 ```
 --------------------------------------------------
 4. Install AMPL
