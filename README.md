@@ -89,13 +89,13 @@ sudo apt install -y python3-pip
 --------------------------------------------------
 2. Install Required Python Packages
 --------------------------------------------------
-
-python3 -m pip install --upgrade pip
-python3 -m pip install numpy
-python3 -m pip install pyomo
-python3 -m pip install pyinterval
-python3 -m pip install casadi
-python3 -m pip install torch
+```bash
+$ python3 -m pip install --upgrade pip
+$ python3 -m pip install numpy
+$ python3 -m pip install pyomo
+$ python3 -m pip install pyinterval
+$ python3 -m pip install casadi
+$ python3 -m pip install torch
 
 --------------------------------------------------
 3. Install dReal Solver
