@@ -104,7 +104,7 @@ curl -fsSL https://raw.githubusercontent.com/dreal/dreal4/master/setup/ubuntu/22
 python3 -m pip install dreal
 ```
 --------------------------------------------------
-4. Install AMPL
+4. Install AMPL and Activate AMPL license
 --------------------------------------------------
 ```bash
 python3 -m pip install amplpy --upgrade
