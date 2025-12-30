@@ -40,17 +40,8 @@ over the entire state space of interest.
 
 Run `algorithm-Inverted.py` to execute the algorithm.
 
-Dependencies: NumPy, PyTorch, Pyomo, dReal, and AMPL (with the Couenne solver).
-
-For AMPL installation instructions, please refer to [the AMPL documentation](https://dev.ampl.com/ampl/install.html).
-# Installation
-
 This project has been tested on **Ubuntu 22.04**.
 
-
----
-
-### Python Dependencies
 
 The following Python packages are required:
 
@@ -105,6 +96,8 @@ python3 -m amplpy.modules activate <license-uuid>
 ```
 A free AMPL Community Edition license can be obtained from:
 https://ampl.com/ce
+
+For AMPL installation instructions, please refer to [the AMPL documentation](https://dev.ampl.com/ampl/install.html)
 
 --------------------------------------------------
 7. Install Couenne Solver (via AMPL)
