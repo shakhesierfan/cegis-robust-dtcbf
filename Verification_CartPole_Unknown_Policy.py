@@ -357,10 +357,10 @@ def verification_fcn(A, B, C, D, E, F, Ts, gamma, lip, d_max):
                     successful = 0
                     if  obj_lip_value > 0:
                         x_cexample = x_lip_min
-                        print("too small but LIIPPP !!!")
+                        print("Region too small; Lipschitz condition violated!!!")
                     else:
                         x_cexample = x_min
-                        print("too small !!!")
+                        print("Region too small; returning the center point as a potential counterexample!!!")
                     
             # All domains processed?
             if not rec_pos_th and not finished:
