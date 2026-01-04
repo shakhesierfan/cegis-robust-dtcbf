@@ -139,7 +139,7 @@ r_safe = np.pi/4   # Radius of the safe set in (theta, omega) space
 
 # Lipschitz-related constants
 lip = 4            # Lipschitz constant bound for the CBF
-d_max = 0.008       # Maximum one-step state variation (robustness margin)
+d_max = 0.008      # maximum disturbance magnitude ||d||₂
 
 # Initialize neural network controller
 ctrl_1 = controller()
