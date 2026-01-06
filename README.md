@@ -19,7 +19,7 @@ The method iteratively alternates between:
   adding counterexamples when violations are found.
 
 The resulting R-DTCBFs can be used **online** to synthesize safe controllers
-under **input constraints** and **bounded disturbances**.
+under **input constraints** and **bounded disturbances** for **discrete-time** dynamical systems.
 
 ---
 
@@ -31,7 +31,7 @@ a prescribed region:
 \[
 \theta^2 + \omega^2 \le (\pi/4)^2.
 \]
-A quadratic R-DTCBF is synthesized using the proposed CEGIS approach and verified
+A quadratic R-DTCBF is synthesized using the proposed counterexample-guided approach and verified
 over the entire state space of interest.
 
 ---
