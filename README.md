@@ -15,7 +15,7 @@ This work proposes a **counterexample-guided framework** for synthesizing
 **robust discrete-time control barrier functions (R-DTCBFs)**.
 The method iteratively alternates between:
 - training candidate R-DTCBFs on sampled states, and
-- formally verifying their validity over the entire region of interest,
+- formally verifying their validity over the entire state space,
   adding counterexamples when violations are found.
 
 The resulting R-DTCBFs can be used **online** to synthesize safe controllers
@@ -56,8 +56,6 @@ The following Python packages are required:
 ---
 Installation & Environment Setup
 ================================
-
-This project has been tested on Ubuntu 22.04.
 
 The following steps describe how to install all required system dependencies,
 Python packages, and external solvers.
