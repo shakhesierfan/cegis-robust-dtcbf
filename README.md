@@ -96,7 +96,7 @@ python3 -m amplpy.modules activate <license-uuid>
 A free AMPL Community Edition license can be obtained from:
 https://ampl.com/ce
 
-For AMPL installation instructions, please refer to [the AMPL documentation](https://dev.ampl.com/ampl/install.html)
+If you encounter any issues with the AMPL installation, please refer to [the AMPL documentation](https://dev.ampl.com/ampl/install.html)
 
 --------------------------------------------------
 5. Install Couenne Solver (via AMPL)
